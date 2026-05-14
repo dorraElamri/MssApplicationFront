@@ -1,0 +1,131 @@
+<app-component-card title="Add Application">
+  <form class="space-y-6 w-full">
+
+    <!-- Application Name -->
+    <div>
+      <app-label for="applicationName">Application Name</app-label>
+      <app-input-field
+        type="text"
+        id="applicationName"
+        [value]="applicationName"
+        (valueChange)="applicationName = $event + ''"
+        placeholder="Enter application name"
+        class="w-full rounded-lg border-gray-300 px-4 py-2 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
+      ></app-input-field>
+      <div *ngIf="errors.applicationName" class="text-red-600 text-xs mt-1">
+        {{ errors.applicationName }}
+      </div>
+    </div>
+
+    <!-- Host -->
+    <div>
+      <app-label for="host">Host (IP Address)</app-label>
+      <app-input-field
+        type="text"
+        id="host"
+        [value]="host"
+        (valueChange)="host = $event + ''"
+        placeholder="Ex: 192.168.1.100"
+        class="w-full rounded-lg border-gray-300 px-4 py-2 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
+      ></app-input-field>
+      <div *ngIf="errors.host" class="text-red-600 text-xs mt-1">
+        {{ errors.host }}
+      </div>
+    </div>
+
+    <!-- Log File Path -->
+    <div>
+      <app-label for="logPath">Log File Path</app-label>
+      <app-input-field
+        type="text"
+        id="logPath"
+        [value]="logPath"
+        (valueChange)="logPath = $event + ''"
+        placeholder="Ex: /var/log/myapp/app.log"
+        class="w-full rounded-lg border-gray-300 px-4 py-2 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
+      ></app-input-field>
+      <div *ngIf="errors.logPath" class="text-red-600 text-xs mt-1">
+        {{ errors.logPath }}
+      </div>
+    </div>
+
+    <!-- Select Input -->
+    <div>
+      <app-label>Select Environment</app-label>
+      <app-select
+        [options]="options"
+        placeholder="Select an option"
+        [value]="selectedOption"
+        (valueChange)="handleSelectChange($event)"
+        className="w-full rounded-lg border-gray-300 px-4 py-2 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 dark:bg-dark-900"
+      ></app-select>
+      <div *ngIf="errors.environment" class="text-red-600 text-xs mt-1">
+        {{ errors.environment }}
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div>
+      <app-label>Description</app-label>
+      <app-text-area
+        [value]="message"
+        (valueChange)="message = $event"
+        [rows]="6"
+        placeholder="Enter a brief description..."
+        class="w-full rounded-lg border-gray-300 px-4 py-2 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
+      ></app-text-area>
+    </div>
+
+    <!-- NOUVEAU : Statut actif (uniquement en édition) -->
+@if (isEditMode) {
+  <div class="mt-4">
+    <app-label>Statut de l'instance</app-label>
+    
+    <div class="flex items-center gap-3 mt-2">
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          id="isActiveToggle"
+          class="sr-only peer"
+          [checked]="isActive"
+          (change)="isActive = !isActive"
+        />
+        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+      </label>
+      
+      <span class="text-sm font-medium text-gray-900 dark:text-white">
+        {{ isActive ? 'Instance active' : 'Instance inactive' }}
+      </span>
+    </div>
+
+    <!-- Optionnel : petit message explicatif -->
+    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+      Décocher désactive l'instance (les appels API seront rejetés).
+    </p>
+  </div>
+}
+
+<!-- Boutons -->
+<div>
+  <div class="flex items-center gap-5">
+
+ <app-button size="sm" variant="primary" routerLink="/applications">
+      Annuler
+    </app-button>
+
+    <app-button size="sm" variant="primary" (click)="onSubmit()">
+      {{ buttonText }}
+    </app-button>
+   
+    
+   
+  </div>
+</div>
+
+
+
+    
+   
+
+  </form>
+</app-component-card>

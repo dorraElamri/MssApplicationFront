@@ -1,0 +1,125 @@
+<div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+  <div class="p-8 lg:p-10">
+    <div class="mb-10">
+      <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
+        {{ pageTitle }}
+      </h1>
+      <p class="mt-2 text-gray-600">
+        {{ infoText }}
+      </p>
+    </div>
+
+    <form #userForm="ngForm" (ngSubmit)="onSubmit(userForm)" class="space-y-8">
+      <!-- Nom complet -->
+      <div>
+        <app-label for="fullName" class="mb-2 block text-gray-700">Nom complet</app-label>
+        <app-input-field
+          id="fullName"
+          name="fullName"
+          type="text"
+          [(ngModel)]="formData.fullName"
+          (blur)="validateField('fullName')"
+          placeholder="John Doe"
+          [error]="fieldErrors.fullName"
+          required
+          class="w-full"
+        ></app-input-field>
+      </div>
+
+      <!-- Email (désactivé en mode édition si tu ne veux pas le modifier) -->
+      <div>
+        <app-label for="email" class="mb-2 block text-gray-700">Adresse email</app-label>
+        <app-input-field
+          id="email"
+          name="email"
+          type="email"
+          [(ngModel)]="formData.email"
+          (blur)="validateField('email')"
+          placeholder="exemple@entreprise.com"
+          [error]="fieldErrors.email"
+          [disabled]="isEditMode"  
+          required
+          email
+          class="w-full"
+        ></app-input-field>
+      </div>
+
+<!-- Rôle -->
+<div>
+  <app-label class="mb-3 block text-gray-700">Rôle attribué</app-label>
+  <div class="grid grid-cols-2 gap-5">
+    <button
+      type="button"
+      (click)="selectRole('User')"
+      [disabled]="isSubmitting"
+      class="py-5 px-6 rounded-xl font-medium transition-all duration-200 border text-center"
+      [ngClass]="{
+        'bg-blue-50 border-blue-500 text-blue-700 shadow-sm ring-1 ring-blue-200': formData.role === 'User',
+        'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400': formData.role !== 'User'
+      }"
+    >
+      <div class="text-lg font-semibold">Utilisateur</div>
+      <div class="text-sm text-gray-500 mt-1">Accès standard</div>
+    </button>
+
+    <button
+      type="button"
+      (click)="selectRole('Admin')"
+      [disabled]="isSubmitting"
+      class="py-5 px-6 rounded-xl font-medium transition-all duration-200 border text-center"
+      [ngClass]="{
+        'bg-violet-50 border-violet-500 text-violet-700 shadow-sm ring-1 ring-violet-200': formData.role === 'Admin',
+        'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400': formData.role !== 'Admin'
+      }"
+    >
+      <div class="text-lg font-semibold">Administrateur</div>
+      <div class="text-sm text-gray-500 mt-1">Accès complet</div>
+    </button>
+  </div>
+</div>
+
+      <!-- Feedback -->
+      <div class="min-h-[80px] space-y-3">
+        <div
+          *ngIf="successMessage"
+          class="bg-green-50 border border-green-200 text-green-800 px-5 py-4 rounded-xl flex items-center gap-3"
+        >
+          <span class="text-green-600 text-xl">✓</span>
+          {{ successMessage }}
+        </div>
+
+        <div
+          *ngIf="errorMessage"
+          class="bg-red-50 border border-red-200 text-red-800 px-5 py-4 rounded-xl flex items-center gap-3"
+        >
+          <span class="text-red-600 text-xl">⚠</span>
+          {{ errorMessage }}
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col sm:flex-row justify-end gap-4 pt-8 border-t border-gray-200">
+        <app-button
+          type="button"
+          variant="primary"
+          routerLink="/usersList"
+          [disabled]="isSubmitting"
+          class="w-full sm:w-auto"
+        >
+          Annuler
+        </app-button>
+
+        <app-button
+          type="submit"
+          variant="primary"
+          [loading]="isSubmitting"
+          [disabled]="isSubmitting || hasFieldErrors || (userForm.invalid ?? true)"
+          class="w-full sm:w-auto"
+          (click)="onSubmit(userForm)"
+        >
+          {{ submitButtonText }}
+        </app-button>
+      </div>
+    </form>
+  </div>
+</div>

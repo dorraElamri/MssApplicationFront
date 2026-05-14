@@ -1,0 +1,161 @@
+<!-- ==================== SÉLECTEUR DE PÉRIODE - STYLE TAILADMIN ==================== -->
+<div class="mb-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-3xl p-6 shadow-theme-xs">
+  <div class="flex flex-col lg:flex-row lg:items-center gap-6">
+
+    <!-- Label + Sélecteur de période -->
+    <div class="flex items-center gap-4">
+      <span class="text-sm font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Période :</span>
+      
+      <div class="relative">
+        <select 
+          [(ngModel)]="selectedPeriod"
+          (ngModelChange)="onPeriodChange()"
+          class="h-12 min-w-[200px] appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-2xl px-5 pr-10 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all duration-200 cursor-pointer">
+          <option value="today">Aujourd'hui</option>
+          <option value="yesterday">Hier</option>
+          <option value="last7days">7 derniers jours</option>
+          <option value="last30days">30 derniers jours</option>
+          <option value="custom">Période personnalisée</option>
+        </select>
+        <!-- Bouton Sélection Instance -->
+          <button (click)="openInstanceModal.emit()" 
+                  class="h-12 px-6 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-2xl text-sm font-medium flex items-center gap-2 hover:border-brand-500 transition-colors">
+            <span>Instance :</span>
+            <span class="font-semibold text-brand-600">{{ selectedInstanceName || 'Toutes' }}</span>
+            <span class="text-xs">▼</span>
+          </button>
+        <!-- Icône flèche personnalisée -->
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 dark:text-gray-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dates personnalisées (affichées seulement en mode custom) -->
+    <div *ngIf="selectedPeriod === 'custom'" 
+         class="flex items-center gap-4 bg-gray-50 dark:bg-gray-800/50 px-5 py-3 rounded-2xl border border-gray-100 dark:border-gray-700">
+      
+      <div class="flex items-center gap-3">
+        <div>
+          <span class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Du</span>
+          <input 
+            type="date"
+            [(ngModel)]="customFromDate"
+            (ngModelChange)="onCustomDateChange()"
+            class="h-10 w-40 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-2xl px-4 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all">
+        </div>
+
+        <span class="text-gray-400 dark:text-gray-500 font-medium pt-6">→</span>
+          
+        <div>
+          <span class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Au</span>
+          <input 
+            type="date"
+            [(ngModel)]="customToDate"
+            (ngModelChange)="onCustomDateChange()"
+            class="h-10 w-40 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-2xl px-4 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all">
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== CONTENU DES KPI ==================== -->
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+
+  <!-- Carte TOTAL LOGS - Grande et centrale -->
+  <div class="lg:col-span-5 rounded-3xl border border-gray-200 bg-white p-8 dark:border-gray-800 dark:bg-white/[0.03] flex flex-col justify-between relative overflow-hidden shadow-theme-xs">
+    <div>
+      <span class="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+        TOTAL LOGS
+      </span>
+      <h4 class="mt-4 text-6xl font-bold text-gray-900 dark:text-white tracking-tighter">
+        {{ totalLogs | number }}
+      </h4>
+    </div>
+    
+    <div class="mt-auto pt-8">
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Du {{ stats?.fromDate | date:'shortDate' }} au {{ stats?.toDate | date:'shortDate' }}
+      </p>
+    </div>
+
+    <!-- Icône décorative en fond -->
+    <div class="absolute bottom-6 right-6 text-8xl text-gray-100 dark:text-gray-800/30">
+      <span [innerHTML]="icons.totalIcon | safeHtml"></span>
+    </div>
+  </div>
+
+  <!-- Les 4 KPI -->
+  <div class="lg:col-span-7 grid grid-cols-2 gap-6">
+
+    <!-- Error -->
+    <div class="rounded-3xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-red-600 mb-3" [innerHTML]="icons.errorIcon | safeHtml"></div>
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">ERROR</span>
+          <h4 class="text-4xl font-semibold text-gray-900 dark:text-white mt-2">
+            {{ errorCount | number }}
+          </h4>
+        </div>
+        <app-badge color="error" size="sm">
+          {{ getLevelPercentage('Error') }}%
+        </app-badge>
+      </div>
+    </div>
+
+    <!-- Warning -->
+    <div class="rounded-3xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-amber-600 mb-3" [innerHTML]="icons.warningIcon | safeHtml"></div>
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">WARNING</span>
+          <h4 class="text-4xl font-semibold text-gray-900 dark:text-white mt-2">
+            {{ warningCount | number }}
+          </h4>
+        </div>
+        <app-badge color="warning" size="sm">
+          {{ getLevelPercentage('Warning') }}%
+        </app-badge>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="rounded-3xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-blue-600 mb-3" [innerHTML]="icons.infoIcon | safeHtml"></div>
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">INFO</span>
+          <h4 class="text-4xl font-semibold text-gray-900 dark:text-white mt-2">
+            {{ infoCount | number }}
+          </h4>
+        </div>
+        <app-badge color="info" size="sm">
+          {{ getLevelPercentage('Information') }}%
+        </app-badge>
+      </div>
+    </div>
+
+    <!-- Debug -->
+    <div class="rounded-3xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-gray-600 dark:text-gray-400 mb-3" [innerHTML]="icons.debugIcon | safeHtml"></div>
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">DEBUG</span>
+          <h4 class="text-4xl font-semibold text-gray-900 dark:text-white mt-2">
+            {{ debugCount | number }}
+          </h4>
+        </div>
+        <app-badge color="info" size="sm">
+          {{ getLevelPercentage('Debug') }}%
+        </app-badge>
+      </div>
+    </div>
+
+  </div>
+</div>

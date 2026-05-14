@@ -1,0 +1,62 @@
+<div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+  <div>
+
+    <div class="mb-5 sm:mb-8">
+      <h1 class="mb-2 font-semibold text-gray-800 text-title-sm">
+        Verify OTP
+      </h1>
+      <p class="text-sm text-gray-500">
+        Enter the 6-digit OTP sent to your email.
+      </p>
+    </div>
+
+    <form (ngSubmit)="onVerifyOTP()" class="space-y-6">
+
+  <div class="flex justify-center gap-3">
+    <input
+      *ngFor="let digit of otp; let i = index; trackBy: trackByIndex"
+      type="text"
+      maxlength="1"
+      inputmode="numeric"
+      autocomplete="one-time-code"
+      class="w-12 h-12 text-center text-lg font-semibold border rounded-lg
+             border-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500"
+      [(ngModel)]="otp[i]"
+      [ngModelOptions]="{ standalone: true }"
+      (ngModelChange)="onModelChange($event, i)"
+      (paste)="onPaste($event)"
+    />
+  </div>
+
+  <button
+  type="button" 
+  (click)="onVerifyOTP()"
+  class="w-full py-2 px-4 bg-brand-500 text-white rounded hover:bg-brand-600"
+>
+  Verify OTP
+</button>
+
+
+</form>
+
+
+    <div class="mt-5 text-center">
+      <p class="text-sm text-gray-500">
+        Didn't receive OTP?
+        <button
+          type="button"
+          (click)="resendOTP()"
+          class="text-brand-500 hover:text-brand-600"
+        >
+          Resend
+        </button>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+
+
+
+  
