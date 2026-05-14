@@ -1,0 +1,92 @@
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+pnpm-debug.log
+
+# Angular
+/.angular/cache
+.angular/
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/settings.json
+
+# Visual Studio
+/.vs
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+/logs
+*.log
+
+# Coverage directory used by tools like istanbul
+/coverage
+
+# Testing
+/karma.conf.js
+
+# Environment files
+/src/environments/environment.prod.ts
+/src/environments/environment.local.ts
+
+# Firebase
+.firebase/
+.firebaserc
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Package lock files (optional — remove if you want to track them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Build artifacts
+*.tgz
+
+# ESLint cache
+.eslintcache
+
+# Angular build cache
+.angular/cache
+
+# Optional: Ignore generated API clients
+# /src/app/api
+
+# Optional: Ignore secrets
+.env
+.env.local
+.env.*.local
