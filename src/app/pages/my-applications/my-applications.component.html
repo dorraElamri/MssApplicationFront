@@ -1,0 +1,358 @@
+<app-page-breadcrumb [breadcrumbs]="[{ label: 'Mes Applications' }]" />
+
+<div class="space-y-6">
+
+  <!-- ── HEADER + STATS ── -->
+  <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 py-5 shadow-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+      <!-- Title -->
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          Mes Applications
+        </h1>
+        <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+          Instances qui vous sont assignées
+        </p>
+      </div>
+
+      <!-- Stat pills -->
+      @if (!isLoading && !errorMessage) {
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</span>
+            <span class="text-base font-bold text-gray-900 dark:text-white">{{ instances.length }}</span>
+          </div>
+          <div class="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-900/20">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+            </span>
+            <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">En ligne</span>
+            <span class="text-base font-bold text-emerald-700 dark:text-emerald-400">{{ onlineCount }}</span>
+          </div>
+          <div class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+            <span class="inline-flex h-2 w-2 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hors ligne</span>
+            <span class="text-base font-bold text-gray-600 dark:text-gray-300">{{ instances.length - onlineCount }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ── SEARCH + FILTER BAR ── -->
+  <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+
+    <!-- Search -->
+    <div class="relative flex-1">
+      <div class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </div>
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="applyFilters()"
+        placeholder="Rechercher par nom, hôte ou description…"
+        class="h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 pl-10 pr-4 text-sm text-gray-800 dark:text-white placeholder:text-gray-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:focus:border-brand-600 transition-colors"
+      />
+    </div>
+
+    <!-- Filter button -->
+    <div class="relative">
+      <button
+        (click)="showFilter = !showFilter"
+        class="inline-flex items-center gap-2 h-11 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18M6 8h12M10 12h4"/>
+        </svg>
+        Filtres
+        @if (activeFiltersCount > 0) {
+          <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white">
+            {{ activeFiltersCount }}
+          </span>
+        }
+      </button>
+
+      <!-- Filter popover -->
+      @if (showFilter) {
+        <div class="absolute top-full right-0 mt-2 w-72 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl z-50 overflow-hidden">
+
+          <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Filtres</h4>
+            @if (activeFiltersCount > 0) {
+              <button (click)="resetFilters()" class="text-xs text-brand-600 dark:text-brand-400 font-medium hover:underline">
+                Tout effacer
+              </button>
+            }
+          </div>
+
+          <div class="p-5 space-y-5">
+
+            <!-- Statut -->
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Statut</p>
+              <div class="space-y-2.5">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" [(ngModel)]="filterActive" (change)="applyFilters()"
+                         class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">Active</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" [(ngModel)]="filterInactive" (change)="applyFilters()"
+                         class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">Inactive</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Connexion -->
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Connexion</p>
+              <div class="space-y-2.5">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" [(ngModel)]="filterOnline" (change)="applyFilters()"
+                         class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">En ligne</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" [(ngModel)]="filterOffline" (change)="applyFilters()"
+                         class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">Hors ligne</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Environnement -->
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Environnement</p>
+              <div class="space-y-2.5">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" [(ngModel)]="filterDevelopment" (change)="applyFilters()"
+                         class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">Development</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" [(ngModel)]="filterStaging" (change)="applyFilters()"
+                         class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">Staging</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" [(ngModel)]="filterProduction" (change)="applyFilters()"
+                         class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">Production</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+            <button (click)="resetFilters()"
+                    class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors">
+              Réinitialiser
+            </button>
+            <button (click)="applyFilters(); showFilter = false"
+                    class="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-xl transition-colors">
+              Appliquer
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Results count -->
+  @if (!isLoading && !errorMessage && instances.length > 0) {
+    <p class="text-xs text-gray-400 dark:text-gray-500">
+      {{ filteredInstances.length }} instance{{ filteredInstances.length !== 1 ? 's' : '' }}
+      @if (activeFiltersCount > 0 || searchTerm) { trouvée{{ filteredInstances.length !== 1 ? 's' : '' }} }
+    </p>
+  }
+
+  <!-- ── LOADING SKELETON ── -->
+  @if (isLoading) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      @for (i of [1,2,3]; track i) {
+        <div class="animate-pulse rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+          <div class="p-5 flex items-center gap-4 border-b border-gray-100 dark:border-gray-800">
+            <div class="h-11 w-11 rounded-xl bg-gray-200 dark:bg-gray-700 flex-shrink-0"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/5"></div>
+              <div class="h-3 bg-gray-100 dark:bg-gray-800 rounded w-2/5"></div>
+            </div>
+          </div>
+          <div class="p-5 space-y-3">
+            <div class="h-3 bg-gray-100 dark:bg-gray-800 rounded w-full"></div>
+            <div class="h-3 bg-gray-100 dark:bg-gray-800 rounded w-4/5"></div>
+            <div class="h-10 bg-gray-100 dark:bg-gray-800 rounded-xl mt-4"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── ERROR ── -->
+  @if (!isLoading && errorMessage) {
+    <div class="flex items-start gap-4 rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-6">
+      <svg class="flex-shrink-0 text-red-500 dark:text-red-400 mt-0.5" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p class="text-sm text-red-700 dark:text-red-300">{{ errorMessage }}</p>
+    </div>
+  }
+
+  <!-- ── CARD GRID ── -->
+  @if (!isLoading && !errorMessage) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      @for (item of filteredInstances; track item.id) {
+
+        <div class="group flex flex-col rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden transition-shadow duration-200 hover:shadow-lg dark:hover:shadow-gray-950/60">
+
+          <!-- Card header -->
+          <div class="px-5 pt-5 pb-4">
+            <div class="flex items-start justify-between gap-3">
+
+              <!-- Avatar + name + host -->
+              <div class="flex items-center gap-3 min-w-0">
+                <div
+                  class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-white font-bold text-lg shadow-sm"
+                  [style]="getAvatarStyle(item)"
+                >
+                  {{ item.applicationName?.charAt(0)?.toUpperCase() || 'A' }}
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-semibold text-gray-900 dark:text-white truncate leading-tight">
+                      {{ item.applicationName || 'Instance sans nom' }}
+                    </h3>
+                    <!-- Live pulse dot -->
+                    @if (getIsOnline(item)) {
+                      <span class="relative flex h-2 w-2 flex-shrink-0">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                      </span>
+                    }
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5 truncate">{{ item.host }}</p>
+                </div>
+              </div>
+
+              <!-- Active badge -->
+              <span class="flex-shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                    [class]="item.isActive
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                      : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'">
+                {{ item.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Divider with env accent -->
+          <div class="h-px mx-5" [style]="'background: linear-gradient(to right, ' + getEnvironmentAccent(item.environment) + '33, transparent)'"></div>
+
+          <!-- Card body -->
+          <div class="flex-1 px-5 py-4 space-y-3">
+
+            <!-- Environment -->
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-500 dark:text-gray-400">Environnement</span>
+              <span class="font-medium px-2.5 py-0.5 rounded-full text-xs"
+                    [style]="'background:' + getEnvironmentAccent(item.environment) + '1a; color:' + getEnvironmentAccent(item.environment)">
+                {{ getEnvironmentLabel(item.environment) }}
+              </span>
+            </div>
+
+            <!-- Last log -->
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-500 dark:text-gray-400">Dernier log</span>
+              @if (item.lastLogAt) {
+                <span class="font-medium text-gray-700 dark:text-gray-300 text-xs">
+                  {{ timeAgo(item.lastLogAt) }}
+                </span>
+              } @else {
+                <span class="text-xs text-gray-400 dark:text-gray-500">Aucun log</span>
+              }
+            </div>
+
+            <!-- Connection status -->
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-500 dark:text-gray-400">Connexion</span>
+              <span class="flex items-center gap-1.5 text-xs font-medium"
+                    [class]="getIsOnline(item) ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'">
+                <span class="h-1.5 w-1.5 rounded-full flex-shrink-0"
+                      [class]="getIsOnline(item) ? 'bg-emerald-500' : 'bg-gray-400'"></span>
+                {{ getIsOnline(item) ? 'En ligne' : 'Hors ligne' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Card footer: actions -->
+          <div class="px-5 pb-5">
+            <div class="flex gap-2.5">
+              <a
+                [routerLink]="['/applications-details', item.id]"
+                class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                Détails
+              </a>
+              <a
+                [routerLink]="['/logs', item.id]"
+                class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-white transition-colors"
+                style="background: #8788ff;"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h10"/>
+                </svg>
+                Voir Logs
+              </a>
+            </div>
+          </div>
+        </div>
+
+      }
+    </div>
+  }
+
+  <!-- ── EMPTY STATE ── -->
+  @if (!isLoading && !errorMessage && filteredInstances.length === 0) {
+    <div class="flex flex-col items-center justify-center py-20 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      @if (searchTerm || activeFiltersCount > 0) {
+        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 mb-5">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-gray-400">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8 11h6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-1">Aucun résultat</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 text-center max-w-xs">
+          Aucune instance ne correspond à vos critères.
+        </p>
+        <button (click)="resetFilters()"
+                class="mt-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+          Effacer les filtres
+        </button>
+      } @else {
+        <div class="flex h-16 w-16 items-center justify-center rounded-2xl mb-5"
+             style="background: rgba(135,136,255,0.1);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8788ff" stroke-width="1.5">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <path d="M17.5 14v6M14.5 17h6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-1">Aucune instance assignée</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 text-center max-w-xs leading-relaxed">
+          Vous n'avez pas encore d'instances assignées. Contactez un administrateur pour en obtenir l'accès.
+        </p>
+      }
+    </div>
+  }
+
+</div>

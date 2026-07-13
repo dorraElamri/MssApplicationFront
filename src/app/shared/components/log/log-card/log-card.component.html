@@ -1,0 +1,303 @@
+<app-component-card >
+  <div class="space-y-8 p-6 bg-white dark:bg-gray-900 rounded-3xl shadow-xl dark:shadow-gray-950/50 border border-gray-100 dark:border-gray-800">
+
+    @if (isLoading) {
+      <div class="text-center py-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto mb-5"></div>
+        <p class="text-gray-600 dark:text-gray-400 text-lg">Chargement des détails du log...</p>
+      </div>
+    }
+    @else if (error) {
+      <div class="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-2xl p-8 text-center">
+        <p class="text-red-700 dark:text-red-300 text-lg">{{ error }}</p>
+      </div>
+    }
+    @else if (log) {
+
+      <!-- ==================== EN-TÊTE PRINCIPAL ==================== -->
+      <div class="bg-gradient-to-br from-slate-50 to-white dark:from-gray-900 dark:to-gray-950 rounded-2xl p-8 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
+
+          <!-- Partie gauche -->
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-4 mb-5">
+              <span class="px-5 py-2 rounded-2xl text-sm font-semibold uppercase tracking-wider shadow-sm"
+                    [ngClass]="getLevelBadgeClass(log.level)">
+                {{ log.level }}
+              </span>
+              <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                {{ formatDate(log.timestamp) }}
+              </span>
+              <div class="ml-auto lg:ml-0">
+                <app-badge size="sm" [color]="getProcessedColor()">
+                  {{ getProcessedLabel() }}
+                </app-badge>
+              </div>
+            </div>
+
+            <h1 class="text-3xl leading-tight font-semibold text-gray-900 dark:text-white tracking-tight">
+              {{ log.message || 'Message non disponible' }}
+            </h1>
+          </div>
+
+          <!-- Boutons d'actions -->
+          <div class="flex-shrink-0 flex flex-col gap-3 min-w-[220px]">
+            <!-- Retour -->
+            <button *ngIf="instanceId"
+                    [routerLink]="['/logs', instanceId]"
+                    class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-2xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:border-gray-400 text-gray-700 dark:text-gray-200 transition-all active:scale-95">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Retour aux logs
+            </button>
+
+            <!-- Marquer comme traité -->
+            <button (click)="toggleProcessed()" [disabled]="isUpdating"
+                    class="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-2xl border transition-all active:scale-95 disabled:opacity-60"
+                    [ngClass]="isProcessed()
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                      : 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-700 dark:bg-red-950 dark:text-red-300'">
+              @if (isUpdating) {
+                <span class="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              }
+              {{ isProcessed() ? 'Marquer non traité' : 'Marquer comme traité' }}
+            </button>
+
+            <!-- ==================== BOUTON ANALYSE IA ==================== -->
+            <button
+              (click)="analyzeWithAI()"
+              [disabled]="isAnalyzing || !log"
+              class="ai-btn group relative w-full inline-flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-semibold text-white transition-colors duration-200 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
+              style="background: #dbdef7; border: 1px solid rgba(135,136,255,0.25);"
+            >
+
+              @if (isAnalyzing) {
+                <!-- ── Analyzing state ── -->
+                <div class="flex w-full items-center justify-center gap-3">
+                  <span class="h-5 w-5 rounded-full border-2 border-t-transparent animate-spin flex-shrink-0"
+                        style="border-color: rgba(135,136,255,0.35); border-top-color: #8788ff;"></span>
+                  <span style="color: rgba(255,255,255,0.85);">Analyse en cours…</span>
+                </div>
+
+              } @else if (aiAnalysis) {
+                <!-- ── Done / re-analyze state ── -->
+                <div class="flex items-center justify-between w-full gap-3">
+                  <div class="flex items-center gap-3">
+                    <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+                         style="background: rgba(135,136,255,0.15);">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                           stroke="#8788ff" stroke-width="2.5"
+                           stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 4v6h-6"/>
+                        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                      </svg>
+                    </div>
+                    <div class="flex flex-col leading-tight">
+                      <span style="font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(135,136,255,0.75);">Analyse IA</span>
+                      <span class="text-white text-sm font-semibold">Ré-analyser</span>
+                    </div>
+                  </div>
+                  <svg class="ai-arrow flex-shrink-0" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                       stroke="rgba(135,136,255,0.5)" stroke-width="2.5"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </div>
+
+              } @else {
+                <!-- ── Idle state ── -->
+                <div class="flex items-center justify-between w-full gap-3">
+                  <div class="flex items-center gap-3">
+                    <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+                         style="background: rgba(135,136,255,0.15);">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                           stroke="#8788ff" stroke-width="2"
+                           stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3L13.5 8.5L19 10L13.5 11.5L12 17L10.5 11.5L5 10L10.5 8.5L12 3Z"/>
+                        <path d="M5 3.5L5.6 5.4L7.5 6L5.6 6.6L5 8.5L4.4 6.6L2.5 6L4.4 5.4L5 3.5Z"/>
+                        <path d="M19 16L19.6 17.9L21.5 18.5L19.6 19.1L19 21L18.4 19.1L16.5 18.5L18.4 17.9L19 16Z"/>
+                      </svg>
+                    </div>
+                    <div class="flex flex-col leading-tight">
+                      <span style="font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(135,136,255,0.75);">Alimenté par IA</span>
+                      <span class="text-white text-sm font-semibold">Analyser ce log</span>
+                    </div>
+                  </div>
+                  <svg class="ai-arrow flex-shrink-0" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                       stroke="rgba(135,136,255,0.5)" stroke-width="2.5"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              }
+
+            </button>
+          </div>
+        </div>
+      </div>
+
+
+
+     <!-- ==================== ANALYSE IA (Version améliorée) ==================== -->
+      @if (aiAnalysis || aiError || isAnalyzing) {
+        <div class="mt-10 border border-brand-200 dark:border-brand-800 bg-gradient-to-br from-brand-25 to-white dark:from-gray-900 dark:to-gray-950 rounded-3xl p-8 shadow-sm">
+          <h3 class="text-xl font-semibold mb-6 flex items-center gap-3 text-brand-700 dark:text-brand-300">
+      
+            Analyse IA
+          </h3>
+
+          @if (isAnalyzing) {
+            <div class="text-center py-16">
+              <div class="animate-spin rounded-full h-14 w-14 border-b-2 border-brand-500 mx-auto mb-6"></div>
+              <p class="text-brand-600 dark:text-brand-400 text-lg font-medium">  analyse le log et propose des solutions...</p>
+            </div>
+          }
+
+          @if (aiError) {
+            <div class="bg-red-50 dark:bg-red-900/40 border border-red-300 p-6 rounded-2xl text-red-700 dark:text-red-300">
+              {{ aiError }}
+            </div>
+          }
+
+          @if (aiAnalysis) {
+            <div class="space-y-8">
+              <!-- Métadonnées -->
+              <div class="flex flex-wrap items-center gap-6">
+                <div>
+                  <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Sévérité :</span>
+                  <span [ngClass]="{
+                    'bg-red-100 text-red-700 border border-red-300 dark:bg-red-900 dark:text-red-300': aiAnalysis.severity === 'HIGH' || aiAnalysis.severity === 'CRITICAL',
+                    'bg-orange-100 text-orange-700 border border-orange-300 dark:bg-orange-900 dark:text-orange-300': aiAnalysis.severity === 'MEDIUM',
+                    'bg-green-100 text-green-700 border border-green-300 dark:bg-green-900 dark:text-green-300': aiAnalysis.severity === 'LOW'
+                  }" class="ml-3 px-5 py-2 rounded-2xl text-sm font-semibold">
+                    {{ aiAnalysis.severity }}
+                  </span>
+                </div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  <span class="font-medium text-brand-600 dark:text-brand-400">{{ aiAnalysis.confidenceScore }}%</span> de confiance
+                </div>
+              </div>
+
+              @if (aiAnalysis.requiresImmediateAttention) {
+                <div class="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 p-5 rounded-2xl font-medium text-red-800 dark:text-red-200 flex items-center gap-3">
+                  ⚠️ Attention immédiate requise
+                </div>
+              }
+
+              <!-- Contenu -->
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                  <h4 class="font-semibold mb-3 text-gray-700 dark:text-gray-200">Explication</h4>
+                  <p class="text-gray-700 dark:text-gray-200 leading-relaxed">{{ aiAnalysis.explanation }}</p>
+                </div>
+                <div>
+                  <h4 class="font-semibold mb-3 text-gray-700 dark:text-gray-200">Cause probable</h4>
+                  <p class="text-gray-700 dark:text-gray-200">{{ aiAnalysis.probableCause }}</p>
+                </div>
+              </div>
+
+              @if (aiAnalysis.solutions.length) {
+                <div>
+                  <h4 class="font-semibold mb-4 text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                    <span>Solutions suggérées</span>
+                    <span class="px-2.5 py-0.5 text-xs font-medium bg-brand-100 text-brand-700 dark:bg-brand-900 dark:text-brand-300 rounded-full">{{ aiAnalysis.solutions.length }}</span>
+                  </h4>
+                  <ul class="space-y-4">
+                    @for (sol of aiAnalysis.solutions; track $index) {
+                      <li class="flex gap-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5">
+                        <span class="text-emerald-500 dark:text-emerald-400 mt-0.5 text-xl">→</span>
+                        <span class="text-gray-700 dark:text-gray-200">{{ sol }}</span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ==================== EXCEPTION ==================== -->
+      @if (hasException()) {
+        <div class="bg-red-50/80 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-2xl p-8">
+          <h3 class="text-xl font-semibold text-red-800 dark:text-red-300 mb-6 flex items-center gap-3">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            Exception détectée
+          </h3>
+          <div class="space-y-6">
+            <div>
+              <dt class="text-sm font-medium text-red-700 dark:text-red-400">Type</dt>
+              <dd class="mt-1 text-base font-mono text-red-800 dark:text-red-300">{{ log.exception.type || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-red-700 dark:text-red-400">Message</dt>
+              <dd class="mt-1 text-gray-800 dark:text-gray-200">{{ log.exception.message || '—' }}</dd>
+            </div>
+            @if (log.exception.stackTrace) {
+              <div>
+                <dt class="text-sm font-medium text-red-700 dark:text-red-400 mb-3">Stack Trace</dt>
+                <pre class="bg-white dark:bg-gray-950 p-6 rounded-2xl overflow-auto max-h-96 text-sm font-mono text-red-900 dark:text-red-200 border border-red-100 dark:border-red-900 whitespace-pre-wrap">
+{{ log.exception.stackTrace }}
+                </pre>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ==================== INFORMATIONS ==================== -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Infos Générales -->
+        <div class="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-7 shadow-sm">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">Informations Générales</h3>
+          <dl class="space-y-5 text-sm">
+            <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Environnement</dt><dd class="font-medium text-gray-900 dark:text-gray-100">{{ log.environment || '—' }}</dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Application</dt><dd class="font-medium text-gray-900 dark:text-gray-100">{{ log.application || '—' }}</dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Service</dt><dd class="font-medium text-gray-900 dark:text-gray-100">{{ log.service || '—' }}</dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Timestamp</dt><dd class="font-medium text-gray-900 dark:text-gray-100">{{ formatDate(log.timestamp) }}</dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Créé le</dt><dd class="font-medium text-gray-900 dark:text-gray-100">{{ formatDate(log.createdAt) }}</dd></div>
+          </dl>
+        </div>
+
+        <!-- Source & Requête -->
+        <div class="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-7 shadow-sm">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">Source & Requête</h3>
+          <dl class="space-y-5 text-sm">
+            <div>
+              <dt class="text-gray-500 dark:text-gray-400">Serveur Source</dt>
+              <dd class="font-medium text-gray-900 dark:text-gray-100">{{ log.sourceServer.name || '—' }}</dd>
+              <dd class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">IP : {{ log.sourceServer.ip || '—' }}</dd>
+            </div>
+            <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Méthode</dt><dd class="font-mono font-medium text-gray-900 dark:text-gray-100">{{ log.request.method || '—' }}</dd></div>
+            <div><dt class="text-gray-500 dark:text-gray-400">Endpoint</dt><dd class="font-mono text-sm break-all text-gray-900 dark:text-gray-100">{{ log.request.endpoint || '—' }}</dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Request ID</dt><dd class="font-mono text-gray-900 dark:text-gray-100">{{ log.request.requestId || '—' }}</dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Durée</dt><dd class="font-medium text-gray-900 dark:text-gray-100">{{ log.request.durationMs ? log.request.durationMs + ' ms' : '—' }}</dd></div>
+          </dl>
+        </div>
+
+        <!-- Traces & IDs -->
+        <div class="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl p-7 shadow-sm lg:col-span-1">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">Traces & Identifiants</h3>
+          <div class="space-y-5 text-sm">
+            <div><dt class="text-gray-500 dark:text-gray-400">Trace ID</dt><dd class="font-mono font-medium break-all text-gray-900 dark:text-gray-100">{{ log.traceId || '—' }}</dd></div>
+            <div><dt class="text-gray-500 dark:text-gray-400">Correlation ID</dt><dd class="font-mono font-medium break-all text-gray-900 dark:text-gray-100">{{ log.correlationId || '—' }}</dd></div>
+          </div>
+        </div>
+      </div>
+
+
+    } @else {
+      <div class="text-center py-20 text-gray-500 dark:text-gray-400">
+        Aucun détail disponible pour ce log
+      </div>
+    }
+
+  </div>
+</app-component-card>

@@ -1,0 +1,370 @@
+<div class="rounded-2xl border border-gray-200 bg-white pt-4 dark:border-white/[0.05] dark:bg-white/[0.03]">
+  <div class="flex flex-col gap-2 px-5 mb-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+    <div>
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+        Applications
+      </h3>
+    </div>
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <form>
+        <div class="relative">
+          <button class="absolute -translate-y-1/2 left-4 top-1/2" type="button">
+            <svg class="fill-gray-500 dark:fill-gray-400" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M3.04199 9.37381C3.04199 5.87712 5.87735 3.04218 9.37533 3.04218C12.8733 3.04218 15.7087 5.87712 15.7087 9.37381C15.7087 12.8705 12.8733 15.7055 9.37533 15.7055C5.87735 15.7055 3.04199 12.8705 3.04199 9.37381ZM9.37533 1.54218C5.04926 1.54218 1.54199 5.04835 1.54199 9.37381C1.54199 13.6993 5.04926 17.2055 9.37533 17.2055C11.2676 17.2055 13.0032 16.5346 14.3572 15.4178L17.1773 18.2381C17.4702 18.531 17.945 18.5311 18.2379 18.2382C18.5308 17.9453 18.5309 17.4704 18.238 17.1775L15.4182 14.3575C16.5367 13.0035 17.2087 11.2671 17.2087 9.37381C17.2087 5.04835 13.7014 1.54218 9.37533 1.54218Z" fill=""></path>
+            </svg>
+          </button>
+          <input
+            type="text"
+            placeholder="Search..."
+            (input)="onSearch($event)"
+            [(ngModel)]="searchTerm"
+            name="search"
+            class="dark:bg-dark-900 h-[42px] w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-[42px] pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[300px]"
+          />
+        </div>
+      </form>
+      
+       <div class="flex items-center gap-3 relative">
+  <!-- Bouton Filter avec compteur de filtres actifs -->
+  <button 
+    (click)="showFilter = !showFilter"
+    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 transition-colors">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M3 12h18M3 20h18" />
+    </svg>
+    Filter
+    @if (activeFiltersCount > 0) {
+      <span class="ml-1 px-1.5 py-0.5 text-xs font-bold bg-brand-500 text-white rounded-full">
+        {{ activeFiltersCount }}
+      </span>
+    }
+  </button>
+
+  <!-- Bouton See all / Reset -->
+  <button 
+    (click)="resetFilters()"
+    [disabled]="activeFiltersCount === 0"
+    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 transition-colors">
+    {{ activeFiltersCount > 0 ? 'Voir tout (reset)' : 'Voir tout' }}
+  </button>
+  
+
+  <!-- Popover / Dropdown de filtres -->
+@if (showFilter) {
+  <div class="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+      <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Filtrer les instances</h4>
+    </div>
+
+    <!-- Filtre Statut Admin (Active / Inactive) -->
+    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+      <h5 class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3">Statut</h5>
+      <div class="space-y-2">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="filterActive" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+          <span class="text-sm text-gray-700 dark:text-gray-300">Active</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="filterInactive" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+          <span class="text-sm text-gray-700 dark:text-gray-300">Inactive</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- NOUVEAU : Filtre Connexion (Online / Offline) -->
+    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+      <h5 class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3">Connexion</h5>
+      <div class="space-y-2">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="filterOnline" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+          <span class="text-sm text-gray-700 dark:text-gray-300">Online (LIVE)</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="filterOffline" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+          <span class="text-sm text-gray-700 dark:text-gray-300">Offline</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Filtre Environnement -->
+    <div class="p-4">
+      <h5 class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3">Environnement</h5>
+      <div class="space-y-2">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="filterDevelopment" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+          <span class="text-sm text-gray-700 dark:text-gray-300">Development</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="filterStaging" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+          <span class="text-sm text-gray-700 dark:text-gray-300">Staging</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="filterProduction" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+          <span class="text-sm text-gray-700 dark:text-gray-300">Production</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Boutons Appliquer / Réinitialiser -->
+    <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+      <button
+        (click)="resetFilters()"
+        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+        Réinitialiser
+      </button>
+      <button
+        (click)="applyFilters(); showFilter = false"
+        class="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg">
+        Appliquer
+      </button>
+    </div>
+  </div>
+}
+ 
+</div>
+
+
+    </div>
+  </div>
+
+  <div class="overflow-hidden">
+    <div class="max-w-full px-5 overflow-x-auto sm:px-6">
+      <table class="min-w-full">
+        <thead class="border-gray-100 border-y dark:border-white/[0.05]">
+          <tr>
+            <th class="py-3 font-normal text-gray-500 text-start text-theme-sm dark:text-gray-400">Nom de l'application</th>
+            <th class="px-4 py-3 font-normal text-gray-500 text-start text-theme-sm dark:text-gray-400">Hôte (Adresse IP)</th>
+            <th class="px-4 py-3 font-normal text-gray-500 text-start text-theme-sm dark:text-gray-400">environnement</th>
+            <th class="px-4 py-3 font-normal text-gray-500 text-start text-theme-sm dark:text-gray-400">Statut</th>
+            <th class="px-4 py-3 font-normal text-gray-500 text-start text-theme-sm dark:text-gray-400">
+              <span class="sr-only">Action</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (item of currentItems; track item.id) {
+          <tr>
+            <!-- Application Name -->
+            <td class="px-4 py-4">
+              <div class="flex items-center gap-3">
+                <!-- Pas d'image – on garde juste le texte -->
+                <div>
+                  <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
+                    {{ item.applicationName || 'Unnamed' }}
+                  </span>
+                  <span class="text-xs text-gray-500 dark:text-gray-500" *ngIf="item.description">
+                    {{ item.description }}
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <!-- Host -->
+            <td class="px-4 py-4 text-gray-700 whitespace-nowrap text-theme-sm dark:text-gray-400">
+              {{ item.host }}
+            </td>
+
+            <!-- Environment -->
+            <td class="px-4 py-4 text-gray-700 text-theme-sm dark:text-gray-400">
+              {{ getEnvironmentLabel(item.environment) }}
+            </td>
+
+            <!-- Status - NOUVEAU : isActive + Statut de connexion -->
+              <td class="px-4 py-4">
+              <div class="flex items-center gap-2 flex-wrap">
+              <!-- 1. Statut Admin (isActive) -->
+              <app-badge
+              size="sm"
+              [color]="getBadgeColor(item.isActive)">
+              {{ item.isActive ? 'Active' : 'Inactive' }}
+              </app-badge>
+
+              <!-- 2. Statut de connexion (Online / Offline) -->
+              <app-badge
+              size="sm"
+              [color]="getConnectionStatus(item).color">
+              {{ getConnectionStatus(item).label }}
+              </app-badge>
+              </div>
+              </td>
+
+            <!-- Actions (3 points) -->
+            <td class="px-4 py-4 text-gray-700 text-theme-sm dark:text-gray-400">
+              <div class="relative inline-block">
+                <app-table-dropdown>
+                  <div dropdown-button>
+                    <button class="text-gray-500 dark:text-gray-400">
+                      <svg class="fill-current" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5.99902 10.245C6.96552 10.245 7.74902 11.0285 7.74902 11.995V12.005C7.74902 12.9715 6.96552 13.755 5.99902 13.755C5.03253 13.755 4.24902 12.9715 4.24902 12.005V11.995C4.24902 11.0285 5.03253 10.245 5.99902 10.245ZM17.999 10.245C18.9655 10.245 19.749 11.0285 19.749 11.995V12.005C19.749 12.9715 18.9655 13.755 17.999 13.755C17.0325 13.755 16.249 12.9715 16.249 12.005V11.995C16.249 11.0285 17.0325 10.245 17.999 10.245ZM13.749 11.995C13.749 11.0285 12.9655 10.245 11.999 10.245C11.0325 10.245 10.249 11.0285 10.249 11.995V12.005C10.249 12.9715 11.0325 13.755 11.999 13.755C12.9655 13.755 13.749 12.9715 13.749 12.005V11.995Z" fill=""/>
+                      </svg>
+                    </button>
+                  </div>
+                  <div dropdown-content>
+                    <button
+                      class="text-xs flex w-full rounded-lg px-3 py-2 text-left font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+                      routerLink="/logs/{{item.id}}">
+                      Voir Logs
+                    </button>
+                    <button
+                      class="text-xs flex w-full rounded-lg px-3 py-2 text-left font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+                      routerLink="/applications-details/{{item.id}}">
+                      Voir Details
+                    </button>
+                    <button
+                       class="text-xs flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-medium text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
+                        (click)="confirmAndDelete(item)">
+                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                       </svg>
+                         Supprimer l'Instance
+                     </button>
+                  </div>
+                </app-table-dropdown>
+              </div>
+            </td>
+          </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="py-8 text-center text-gray-500 dark:text-gray-400">
+                Aucune instance trouvée
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="px-6 py-4 border-t border-gray-200 dark:border-white/[0.05]">
+    <app-pagination
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="goToPage($event)" />
+  </div>
+</div>
+
+<!-- ===================== DELETE CONFIRMATION MODAL ===================== -->
+@if (showDeleteModal && itemToDelete) {
+<div
+  class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+  style="background: rgba(8,12,52,0.72); backdrop-filter: blur(5px);"
+  (click)="cancelDelete()"
+>
+  <div
+    class="delete-modal-card relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl"
+    style="background: #ffffff;"
+    (click)="$event.stopPropagation()"
+  >
+
+    <!-- ── Header strip: deep navy + dot-grid ── -->
+    <div
+      class="relative overflow-hidden px-8 pt-9 pb-8"
+      style="background: #0C144E;"
+    >
+      <!-- Dot-grid texture -->
+      <div
+        class="pointer-events-none absolute inset-0"
+        style="background-image: radial-gradient(circle, rgba(135,136,255,0.35) 1.2px, transparent 1.2px); background-size: 22px 22px;"
+      ></div>
+
+      <!-- Trash icon -->
+      <div class="relative z-10 mb-6 flex items-center gap-4">
+        <div
+          class="flex items-center justify-center rounded-xl"
+          style="width: 52px; height: 52px; flex-shrink: 0; border: 2px solid rgba(239,68,68,0.5); background: rgba(239,68,68,0.12);"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+               stroke="#f87171" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+            <path d="M10 11v6M14 11v6" />
+            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+          </svg>
+        </div>
+        <div>
+          <p style="font-size: 10px; font-weight: 700; letter-spacing: 0.16em; color: #fca5a5; text-transform: uppercase; margin-bottom: 2px;">
+            Supprimer l'instance
+          </p>
+          <p style="font-size: 11px; color: rgba(252,165,165,0.65);">
+            Cette action est irréversible
+          </p>
+        </div>
+      </div>
+
+      <!-- App name -->
+      <div class="relative z-10">
+        <h2 style="font-size: 1.6rem; font-weight: 700; color: #ffffff; line-height: 1.2; word-break: break-word; text-wrap: balance;">
+          {{ itemToDelete.applicationName || itemToDelete.host }}
+        </h2>
+      </div>
+
+      <!-- Close button -->
+      <button
+        (click)="cancelDelete()"
+        class="absolute right-5 top-5 z-10 flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+        style="color: rgba(178,179,255,0.7);"
+        aria-label="Annuler"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- ── Body ── -->
+    <div class="px-8 py-6" style="background: #ffffff;">
+
+      <!-- Warning block -->
+      <div class="mb-6 flex gap-3 rounded-xl p-4"
+           style="background: #fff1f2; border: 1px solid #fecdd3;">
+        <svg style="flex-shrink: 0; margin-top: 1px;" width="18" height="18"
+             viewBox="0 0 24 24" fill="none" stroke="#dc2626"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <p style="font-size: 0.875rem; color: #dc2626; line-height: 1.5;">
+          Tous les logs, la configuration et la clé API associés seront définitivement perdus.
+        </p>
+      </div>
+
+      <!-- Host + env row -->
+      <div class="mb-6 flex items-center gap-6">
+        <div>
+          <p style="font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px;">Hôte</p>
+          <p style="font-size: 0.875rem; font-weight: 600; color: #111827; font-family: monospace;">{{ itemToDelete.host }}</p>
+        </div>
+        <div style="width: 1px; height: 2rem; background: #e5e7eb;"></div>
+        <div>
+          <p style="font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px;">Environnement</p>
+          <p style="font-size: 0.875rem; font-weight: 600; color: #111827;">{{ getEnvironmentLabel(itemToDelete.environment) }}</p>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-3">
+        <button
+          (click)="cancelDelete()"
+          class="flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors"
+          style="border: 1px solid #e5e7eb; color: #6b7280; background: transparent;"
+        >
+          Annuler
+        </button>
+        <button
+          (click)="confirmDelete()"
+          class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style="background: #dc2626;"
+        >
+          Supprimer définitivement
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

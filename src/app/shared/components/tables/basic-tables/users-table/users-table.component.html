@@ -1,0 +1,368 @@
+
+
+<div class="rounded-2xl border border-gray-200 bg-white pt-4 dark:border-white/[0.05] dark:bg-white/[0.03]">
+  
+  <!-- Barre supérieure : titre + recherche + filtre rôle -->
+  <div class="flex flex-col gap-4 px-5 mb-6 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+    <div>
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+        Liste des utilisateurs
+      </h3>
+    </div>
+
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+      <!-- Recherche texte -->
+      <form class="flex-1 min-w-[280px]">
+        <div class="relative">
+          <button class="absolute -translate-y-1/2 left-4 top-1/2" type="button">
+            <svg class="fill-gray-500 dark:fill-gray-400" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M3.04199 9.37381C3.04199 5.87712 5.87735 3.04218 9.37533 3.04218C12.8733 3.04218 15.7087 5.87712 15.7087 9.37381C15.7087 12.8705 12.8733 15.7055 9.37533 15.7055C5.87735 15.7055 3.04199 12.8705 3.04199 9.37381ZM9.37533 1.54218C5.04926 1.54218 1.54199 5.04835 1.54199 9.37381C1.54199 13.6993 5.04926 17.2055 9.37533 17.2055C11.2676 17.2055 13.0032 16.5346 14.3572 15.4178L17.1773 18.2381C17.4702 18.531 17.945 18.5311 18.2379 18.2382C18.5308 17.9453 18.5309 17.4704 18.238 17.1775L15.4182 14.3575C16.5367 13.0035 17.2087 11.2671 17.2087 9.37381C17.2087 5.04835 13.7014 1.54218 9.37533 1.54218Z" fill=""></path>
+            </svg>
+          </button>
+          <input
+            type="text"
+            placeholder="Rechercher par nom, email, rôle..."
+            [(ngModel)]="searchTerm"
+            (input)="applyFilters()"
+            name="search"
+            class="dark:bg-dark-900 h-[42px] w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-[42px] pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[300px]"
+          />
+        </div>
+      </form>
+
+      <!-- Filtre par rôle – style identique à l'exemple fourni -->
+      <div class="flex items-center gap-3 relative">
+        <!-- Bouton Filter avec compteur -->
+        <button
+          (click)="showRoleFilter = !showRoleFilter"
+          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 transition-colors"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M3 12h18M3 20h18" />
+          </svg>
+          Filtrer
+          @if (selectedRole !== 'all') {
+            <span class="ml-1 px-1.5 py-0.5 text-xs font-bold bg-brand-500 text-white rounded-full">
+              1
+            </span>
+          }
+        </button>
+
+        <!-- Bouton Reset / Voir tout -->
+        <button
+          (click)="resetRoleFilter()"
+          [disabled]="selectedRole === 'all'"
+          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 transition-colors"
+        >
+          {{ selectedRole !== 'all' ? 'Voir tout (reset)' : 'Voir tout' }}
+        </button>
+
+        <!-- Dropdown / Popover des rôles -->
+        @if (showRoleFilter) {
+          <div class="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Filtrer par rôle</h4>
+            </div>
+
+            <div class="p-4 space-y-3">
+              <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-2 rounded-lg transition-colors">
+                <input
+                  type="radio"
+                  [(ngModel)]="selectedRole"
+                  value="all"
+                  name="roleFilter"
+                  class="h-4 w-4 text-brand-600 border-gray-300 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <span class="text-sm text-gray-700 dark:text-gray-300">Tous les rôles</span>
+              </label>
+
+              <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-2 rounded-lg transition-colors">
+                <input
+                  type="radio"
+                  [(ngModel)]="selectedRole"
+                  value="Admin"
+                  name="roleFilter"
+                  class="h-4 w-4 text-brand-600 border-gray-300 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <span class="text-sm text-gray-700 dark:text-gray-300">Admin seulement</span>
+              </label>
+
+              <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-2 rounded-lg transition-colors">
+                <input
+                  type="radio"
+                  [(ngModel)]="selectedRole"
+                  value="User"
+                  name="roleFilter"
+                  class="h-4 w-4 text-brand-600 border-gray-300 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <span class="text-sm text-gray-700 dark:text-gray-300">User seulement</span>
+              </label>
+            </div>
+
+            <!-- Boutons Appliquer / Fermer -->
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+              <button
+                (click)="showRoleFilter = false"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                Fermer
+              </button>
+              <button
+                (click)="applyFilters(); showRoleFilter = false"
+                class="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors"
+              >
+                Appliquer
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+  
+  <!-- Tableau (inchangé, juste pour référence) -->
+  <div class="overflow-hidden">
+    <div class="max-w-full px-5 overflow-x-auto sm:px-6">
+      <table class="min-w-full">
+        <thead class="border-gray-100 border-y dark:border-white/[0.05]">
+          <tr>
+            <th class="py-3 font-normal text-gray-500 text-start text-theme-sm dark:text-gray-400">Nom complet</th>
+            <th class="px-4 py-3 font-normal text-gray-500 text-start text-theme-sm dark:text-gray-400">Email</th>
+            <th class="px-4 py-3 font-normal text-gray-500 text-start text-theme-sm dark:text-gray-400">Nom d'utilisateur</th>
+            <th class="px-4 py-3 font-normal text-gray-500 text-start text-theme-sm dark:text-gray-400">Rôles</th>
+            <th class="px-4 py-3 font-normal text-gray-500 text-end text-theme-sm dark:text-gray-400">
+              <span class="sr-only">Actions</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @if (isLoading) {
+            <tr>
+              <td colspan="5" class="py-8 text-center text-gray-500 dark:text-gray-400">
+                Chargement des utilisateurs...
+              </td>
+            </tr>
+          } @else if (errorMessage) {
+            <tr>
+              <td colspan="5" class="py-8 text-center text-red-600 dark:text-red-400">
+                {{ errorMessage }}
+              </td>
+            </tr>
+          } @else if (paginatedUsers.length === 0) {
+            <tr>
+              <td colspan="5" class="py-8 text-center text-gray-500 dark:text-gray-400">
+                Aucun utilisateur trouvé
+              </td>
+            </tr>
+          } @else {
+            @for (user of paginatedUsers; track user.id) {
+              <tr>
+                <td class="px-4 py-4 text-gray-700 text-theme-sm dark:text-gray-300">
+                  {{ user.fullName || '—' }}
+                </td>
+                <td class="px-4 py-4 text-gray-700 text-theme-sm dark:text-gray-300">
+                  {{ user.email || '—' }}
+                </td>
+                <td class="px-4 py-4 text-gray-700 text-theme-sm dark:text-gray-300">
+                  {{ user.userName || '—' }}
+                </td>
+                <td class="px-4 py-4 text-gray-700 text-theme-sm dark:text-gray-300">
+                  @if (user.roles?.length) {
+                    <div class="flex flex-wrap gap-2">
+                      @for (role of user.roles; track role) {
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                          {{ role }}
+                        </span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="text-gray-500 dark:text-gray-400">Aucun rôle</span>
+                  }
+                </td>
+                <td class="px-4 py-4 text-right whitespace-nowrap">
+                  <div class="inline-flex items-center gap-4">
+                    <!-- Détails -->
+                    <button
+                      [routerLink]="['/user-details', user.id]"
+                      class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300 transition-colors"
+                      title="Voir les détails">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                    <!-- Modifier -->
+                    <button
+                      [routerLink]="['/user-updateform', user.id]"
+                      class="text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-300 transition-colors"
+                      title="Modifier l'utilisateur">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+
+ 
+                    <!-- Supprimer -->
+                    <button
+                      (click)="openDeleteModal(user)"
+                      class="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-300 transition-colors"
+                      title="Supprimer l'utilisateur">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="px-6 py-4 border-t border-gray-200 dark:border-white/[0.05]">
+    <app-pagination
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      [disabled]="isLoading"
+      (pageChange)="goToPage($event)" />
+  </div>
+</div>
+
+<!-- ===================== DELETE CONFIRMATION MODAL ===================== -->
+@if (showDeleteModal && userToDelete) {
+<div
+  class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+  style="background: rgba(8,12,52,0.72); backdrop-filter: blur(5px);"
+  (click)="cancelDelete()"
+>
+  <div
+    class="delete-modal-card relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl"
+    style="background: #ffffff;"
+    (click)="$event.stopPropagation()"
+  >
+
+    <!-- ── Header strip: deep navy + dot-grid ── -->
+    <div
+      class="relative overflow-hidden px-8 pt-9 pb-8"
+      style="background: #0C144E;"
+    >
+      <!-- Dot-grid texture -->
+      <div
+        class="pointer-events-none absolute inset-0"
+        style="background-image: radial-gradient(circle, rgba(135,136,255,0.35) 1.2px, transparent 1.2px); background-size: 22px 22px;"
+      ></div>
+
+      <!-- Icon + label row -->
+      <div class="relative z-10 mb-6 flex items-center gap-4">
+        <div
+          class="flex items-center justify-center rounded-xl"
+          style="width: 52px; height: 52px; flex-shrink: 0; border: 2px solid rgba(239,68,68,0.5); background: rgba(239,68,68,0.12);"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+               stroke="#f87171" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+            <line x1="17" y1="11" x2="23" y2="11" />
+          </svg>
+        </div>
+        <div>
+          <p style="font-size: 10px; font-weight: 700; letter-spacing: 0.16em; color: #fca5a5; text-transform: uppercase; margin-bottom: 2px;">
+            Supprimer l'utilisateur
+          </p>
+          <p style="font-size: 11px; color: rgba(252,165,165,0.65);">
+            Cette action est irréversible
+          </p>
+        </div>
+      </div>
+
+      <!-- User name -->
+      <div class="relative z-10">
+        <h2 style="font-size: 1.6rem; font-weight: 700; color: #ffffff; line-height: 1.2; word-break: break-word; text-wrap: balance;">
+          {{ userToDelete.fullName || userToDelete.userName }}
+        </h2>
+      </div>
+
+      <!-- Close button -->
+      <button
+        (click)="cancelDelete()"
+        class="absolute right-5 top-5 z-10 flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+        style="color: rgba(178,179,255,0.7);"
+        aria-label="Annuler"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- ── Body ── -->
+    <div class="px-8 py-6" style="background: #ffffff;">
+
+      <!-- Warning block -->
+      <div class="mb-6 flex gap-3 rounded-xl p-4"
+           style="background: #fff1f2; border: 1px solid #fecdd3;">
+        <svg style="flex-shrink: 0; margin-top: 1px;" width="18" height="18"
+             viewBox="0 0 24 24" fill="none" stroke="#dc2626"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <p style="font-size: 0.875rem; color: #dc2626; line-height: 1.5;">
+          Le compte, les accès et toutes les données associées à cet utilisateur seront définitivement supprimés.
+        </p>
+      </div>
+
+      <!-- Email + roles row -->
+      <div class="mb-6 flex items-start gap-6">
+        <div class="min-w-0 flex-1">
+          <p style="font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px;">Email</p>
+          <p style="font-size: 0.875rem; font-weight: 600; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            {{ userToDelete.email }}
+          </p>
+        </div>
+        <div style="width: 1px; height: 2rem; background: #e5e7eb; flex-shrink: 0; margin-top: 18px;"></div>
+        <div class="flex-1">
+          <p style="font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; margin-bottom: 6px;">Rôles</p>
+          @if (userToDelete.roles?.length) {
+            <div class="flex flex-wrap gap-1.5">
+              @for (role of userToDelete.roles; track role) {
+                <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #eff6ff; color: #1d4ed8;">
+                  {{ role }}
+                </span>
+              }
+            </div>
+          } @else {
+            <p style="font-size: 0.875rem; color: #9ca3af;">Aucun rôle</p>
+          }
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-3">
+        <button
+          (click)="cancelDelete()"
+          class="flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors"
+          style="border: 1px solid #e5e7eb; color: #6b7280; background: transparent;"
+        >
+          Annuler
+        </button>
+        <button
+          (click)="confirmDelete()"
+          class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style="background: #dc2626;"
+        >
+          Supprimer définitivement
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

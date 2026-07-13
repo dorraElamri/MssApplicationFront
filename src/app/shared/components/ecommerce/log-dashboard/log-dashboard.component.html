@@ -1,0 +1,576 @@
+<!-- ============================================================
+     log-dashboard.component.html — VERSION UI PROFESSIONNELLE
+     Adapté au design system TailAdmin (light/dark mode)
+     ============================================================ -->
+<div class="dashboard-root">
+<!-- ══════════════════════════════════════════════════════════
+       HEADER
+       ══════════════════════════════════════════════════════════ -->
+<header class="dashboard-header">
+<div class="header-left">
+<div class="header-brand">
+<div class="brand-icon">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+</svg>
+</div>
+<div>
+<h1 class="header-title">Analyse de Logs</h1>
+<p class="header-sub">Tableau de bord d'observabilité en temps réel</p>
+</div>
+</div>
+</div>
+<div class="header-center">
+@if (s) {
+<div class="health-pills">
+<span class="pill pill-online">
+<span class="pulse-dot"></span>
+            {{ s.onlineInstancesCount }} En ligne
+</span>
+<span class="pill pill-offline">{{ s.offlineInstancesCount }} Hors ligne</span>
+<span class="pill pill-total">{{ s.activeInstancesCount }} Actifs</span>
+</div>
+      }
+</div>
+<div class="header-right">
+<button class="btn-refresh" (click)="loadStats()" [disabled]="loading()">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+[class.spinning]="loading()">
+<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+</svg>
+        Actualiser
+</button>
+<button class="btn-export" (click)="exportCsv()">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+<polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+</svg>
+        Exporter CSV
+</button>
+</div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════
+       FILTER BAR
+       ══════════════════════════════════════════════════════════ -->
+<section class="filter-bar">
+<div class="filter-group">
+<label class="filter-label">Période</label>
+<div class="preset-pills">
+@for (preset of datePresets; track preset.value) {
+<button class="preset-pill" [class.active]="activePreset() === preset.value"
+(click)="applyPreset(preset.value)">{{ preset.label }}</button>
+        }
+<button class="preset-pill" [class.active]="activePreset() === 'custom'"
+(click)="activePreset.set('custom')">Personnalisée</button>
+</div>
+@if (activePreset() === 'custom') {
+<div class="date-range-inputs" [formGroup]="filterForm">
+<input type="date" formControlName="fromDate" class="date-input" />
+<span class="date-separator">→</span>
+<input type="date" formControlName="toDate" class="date-input" />
+</div>
+      }
+</div>
+<div class="filter-group">
+<label class="filter-label">Granularité</label>
+<div class="toggle-group" [formGroup]="filterForm">
+<button type="button" class="toggle-btn"
+[class.active]="filterForm.get('granularity')?.value === 'day'"
+(click)="filterForm.patchValue({ granularity: 'day' })">Jour</button>
+<button type="button" class="toggle-btn"
+[class.active]="filterForm.get('granularity')?.value === 'hour'"
+(click)="filterForm.patchValue({ granularity: 'hour' })">Heure</button>
+</div>
+</div>
+<div class="filter-group filter-instances">
+<div class="instance-label-row">
+<span class="filter-label">
+          Instances
+@if (selectedInstances().length) {
+<span class="badge-count">{{ selectedInstances().length }}/{{ instances().length }}</span>
+          }
+</span>
+<button class="instance-panel-toggle" [class.open]="instancePanelOpen()"
+(click)="toggleInstancePanel()" type="button"
+[title]="instancePanelOpen() ? 'Fermer' : 'Rechercher & sélectionner des instances'">
+@if (instancePanelOpen()) {
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+</svg>
+          } @else {
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+</svg>
+          }
+</button>
+</div>
+@if (instancePanelOpen()) {
+<div class="instance-selector">
+<div class="instance-search">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+</svg>
+<input type="text" placeholder="Rechercher par nom ou hôte…" [value]="instanceSearch()"
+(input)="instanceSearch.set($any($event.target).value)" class="search-input" autofocus />
+@if (instanceSearch()) {
+<button class="clear-btn" (click)="clearInstanceSearch()" title="Effacer la recherche">×</button>
+            }
+</div>
+<div class="instance-list">
+@for (inst of filteredInstances(); track inst.id) {
+<label class="instance-item" [class.selected]="selectedInstances().includes(inst.id)">
+<input type="checkbox" [checked]="selectedInstances().includes(inst.id)"
+(change)="toggleInstance(inst.id)" />
+<span class="inst-status-dot" [class]="getStatusClass(inst.status)"></span>
+<span class="inst-name">{{ inst.applicationName || inst.host }}</span>
+</label>
+            }
+@empty {
+<span class="instance-empty">Aucune instance ne correspond à "{{ instanceSearch() }}"</span>
+            }
+</div>
+@if (selectedInstances().length) {
+<div class="instance-footer">
+<button class="clear-selection-link" (click)="clearInstanceSelection()" type="button">
+                Effacer la sélection
+</button>
+</div>
+          }
+</div>
+      } @else {
+@if (!instances().length) {
+<span class="instance-empty-inline">Aucune instance</span>
+        } @else {
+<span class="instance-summary">
+            {{ selectedInstances().length ? selectedInstances().length + ' sélectionnées' : 'Aucune sélectionnée' }}
+            — <button class="instance-panel-link" (click)="toggleInstancePanel()" type="button">Filtrer</button>
+</span>
+        }
+      }
+</div>
+<div class="filter-group filter-toggles">
+<label class="filter-label">Filtres rapides</label>
+<div class="toggle-checks">
+<button class="quick-filter" [class.active]="onlyErrors()" (click)="toggleOnlyErrors()">
+<span class="qf-dot red"></span>Seulement les erreurs
+</button>
+<button class="quick-filter" [class.active]="showComparePeriod()" (click)="toggleComparePeriod()">
+<span class="qf-dot blue"></span>Comparer la période
+</button>
+</div>
+</div>
+<div class="filter-group filter-apply">
+<button class="btn-apply" (click)="loadStats()" [disabled]="loading()">
+@if (loading()) {
+<span class="spinner-sm"></span>
+        } @else {
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+</svg>
+        }
+        Appliquer
+</button>
+</div>
+</section>
+
+<!-- Error Banner -->
+@if (error()) {
+<div class="error-banner">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+<line x1="12" y1="16" x2="12.01" y2="16"/>
+</svg>
+      {{ error() }}
+<button (click)="loadStats()" class="retry-link">Réessayer</button>
+</div>
+  }
+
+<!-- Loading Skeleton -->
+@if (loading() && !s) {
+<div class="skeleton-grid">
+@for (i of [1,2,3,4,5,6,7,8]; track i) {
+<div class="skeleton-card">
+<div class="skeleton-line"></div>
+<div class="skeleton-line short"></div>
+</div>
+      }
+</div>
+  }
+
+<!-- ══════════════════════════════════════════════════════════
+       MAIN DASHBOARD CONTENT
+       ══════════════════════════════════════════════════════════ -->
+@if (s && !loading()) {
+<!-- ────────────────────────────────────────────────────────
+         SECTION 1 — KPI VOLUME
+         ──────────────────────────────────────────────────────── -->
+<div class="section-label">
+<span class="section-label-dot"></span>
+      Volume de Logs & Erreurs
+</div>
+<section class="kpi-section kpi-section-4">
+@for (kpi of kpiCards().slice(0, 4); track kpi.id) {
+<div class="kpi-card" [class]="getKpiCardClass(kpi.color)">
+<div class="kpi-header">
+<span class="kpi-label">{{ kpi.label }}</span>
+<div class="kpi-icon-wrap">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+@switch (kpi.icon) {
+@case ('layers') {
+<polygon points="12 2 2 7 12 12 22 7 12 2"/>
+<polyline points="2 17 12 22 22 17"/>
+<polyline points="2 12 12 17 22 12"/>
+                  }
+@case ('alert-octagon') {
+<polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+<line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  }
+@case ('alert-triangle') {
+<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+<line x1="12" y1="9" x2="12" y2="13"/>
+<line x1="12" y1="17" x2="12.01" y2="17"/>
+                  }
+@case ('skull') {
+<circle cx="12" cy="8" r="5"/>
+<path d="M8 14v1a4 4 0 0 0 8 0v-1"/>
+<line x1="10" y1="14" x2="10" y2="17"/>
+<line x1="14" y1="14" x2="14" y2="17"/>
+                  }
+                }
+</svg>
+</div>
+</div>
+<div class="kpi-value">{{ kpi.value }}</div>
+<div class="kpi-footer">
+<span class="kpi-sub">{{ kpi.sub }}</span>
+@if (kpi.delta !== null) {
+<span class="kpi-delta" [class]="getDeltaClass(kpi.delta)">
+                {{ getDeltaIcon(kpi.delta) }}{{ kpi.delta | number:'1.0-1' }}%
+</span>
+            }
+</div>
+</div>
+      }
+</section>
+
+<!-- ────────────────────────────────────────────────────────
+         SECTION 2 — KPI PERFORMANCE
+         ──────────────────────────────────────────────────────── -->
+<div class="section-label">
+<span class="section-label-dot perf"></span>
+      Performance & Infrastructure
+</div>
+<section class="kpi-section kpi-section-4">
+@for (kpi of kpiCards().slice(3, 8); track kpi.id) {
+<div class="kpi-card kpi-card-perf" [class]="getKpiCardClass(kpi.color)">
+<div class="kpi-header">
+<span class="kpi-label">{{ kpi.label }}</span>
+<div class="kpi-icon-wrap">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+@switch (kpi.icon) {
+@case ('timer') {
+<circle cx="12" cy="12" r="10"/>
+<polyline points="12 6 12 12 16 14"/>
+                  }
+@case ('clock') {
+<circle cx="12" cy="12" r="10"/>
+<polyline points="12 6 12 12 16 14"/>
+                  }
+@case ('server') {
+<rect x="2" y="2" width="20" height="8" rx="2"/>
+<rect x="2" y="14" width="20" height="8" rx="2"/>
+<line x1="6" y1="6" x2="6.01" y2="6"/>
+<line x1="6" y1="18" x2="6.01" y2="18"/>
+                  }
+@case ('bug') {
+<path d="M8 2l1.88 1.88"/><path d="M14.12 3.88 16 2"/>
+<path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/>
+<path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/>
+<path d="M12 20v-9"/>
+                  }
+@case ('alert-triangle') {
+<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+<line x1="12" y1="9" x2="12" y2="13"/>
+<line x1="12" y1="17" x2="12.01" y2="17"/>
+                  }
+                }
+</svg>
+</div>
+</div>
+<div class="kpi-value">{{ kpi.value }}</div>
+<div class="kpi-footer">
+<span class="kpi-sub">{{ kpi.sub }}</span>
+@if (kpi.delta !== null) {
+<span class="kpi-delta" [class]="getDeltaClass(kpi.delta)">
+                {{ getDeltaIcon(kpi.delta) }}{{ kpi.delta | number:'1.0-1' }}%
+</span>
+            }
+</div>
+</div>
+      }
+</section>
+
+<!-- ────────────────────────────────────────────────────────
+         SECTION 3 — LOG VOLUME CHART
+         ──────────────────────────────────────────────────────── -->
+<section class="chart-row">
+<div class="chart-card chart-full">
+<div class="chart-header">
+<div class="chart-title-group">
+<h3 class="chart-title">Volume de Logs au Fil du Temps</h3>
+<p class="chart-sub">Logs totaux vs erreurs · granularité {{ s.granularity }}</p>
+</div>
+<div class="chart-header-right">
+<div class="chart-legend">
+<span class="legend-item"><span class="legend-dot blue"></span>Total</span>
+<span class="legend-item"><span class="legend-dot red"></span>Erreurs</span>
+@if (showComparePeriod() && s.previousPeriod) {
+<span class="legend-item"><span class="legend-dot gray"></span>Période précédente</span>
+              }
+</div>
+</div>
+</div>
+<div class="chart-body" style="height: 240px">
+<canvas id="chart-timeline"></canvas>
+</div>
+</div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────
+         SECTION 4 — SPLIT CHARTS
+         ──────────────────────────────────────────────────────── -->
+<section class="chart-row chart-row-split">
+<!-- Log Level Distribution -->
+<div class="chart-card chart-half">
+<div class="chart-header">
+<div class="chart-title-group">
+<h3 class="chart-title">Distribution des Niveaux de Logs</h3>
+<p class="chart-sub">Répartition par sévérité</p>
+</div>
+</div>
+<div class="chart-split-body">
+<div class="chart-donut-wrap" style="height: 200px; flex: 1">
+<canvas id="chart-pie"></canvas>
+</div>
+<div class="level-badges-vertical">
+@for (level of (s.levelDistribution || []).slice(0,6); track level.level) {
+<div class="level-badge-row" [class]="getLevelClass(level.level)">
+<div class="level-badge-left">
+<span class="level-dot" [class]="getLevelClass(level.level)"></span>
+<span class="level-name">{{ level.level }}</span>
+</div>
+<div class="level-badge-right">
+<strong class="level-count">{{ formatBigNumber(level.count) }}</strong>
+<span class="level-pct">{{ level.percentage | number:'1.0-1' }}%</span>
+</div>
+</div>
+            }
+@empty {
+<div class="level-badge-row badge-unknown"><span>Aucune donnée</span><strong>0</strong></div>
+            }
+</div>
+</div>
+</div>
+
+<!-- Activity by Day -->
+<div class="chart-card chart-half">
+<div class="chart-header">
+<div class="chart-title-group">
+<h3 class="chart-title">Activité par Jour de la Semaine</h3>
+<p class="chart-sub">Volume de logs par jour de la semaine</p>
+</div>
+</div>
+<div class="chart-body" style="height: 240px">
+<canvas id="chart-dayofweek"></canvas>
+</div>
+</div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────
+         SECTION 5 — Top Services & Exceptions
+         ──────────────────────────────────────────────────────── -->
+<section class="chart-row chart-row-split">
+<div class="chart-card chart-half">
+<div class="chart-header">
+<div class="chart-title-group">
+<h3 class="chart-title">Top 10 Services</h3>
+<p class="chart-sub">Services les plus actifs par volume de logs</p>
+</div>
+</div>
+<div class="chart-body" style="height: 240px">
+<canvas id="chart-services"></canvas>
+</div>
+@if (!(s.topServices.length)) {
+<div class="empty-state">Aucune donnée de service — les logs peuvent ne pas contenir de champ <code>service</code></div>
+        }
+</div>
+<div class="chart-card chart-half">
+<div class="chart-header">
+<div class="chart-title-group">
+<h3 class="chart-title">Distribution des Exceptions</h3>
+<p class="chart-sub">Types d'exceptions les plus fréquents</p>
+</div>
+</div>
+<div class="chart-body" style="height: 240px">
+<canvas id="chart-exceptions"></canvas>
+</div>
+@if (!(s.exceptionDistribution.length)) {
+<div class="empty-state">Aucune exception enregistrée sur cette période 🎉</div>
+        }
+</div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────
+         SECTION 6 — Duration & Hourly
+         ──────────────────────────────────────────────────────── -->
+<section class="chart-row chart-row-thirds">
+<!-- Duration Trend -->
+<div class="chart-card chart-third-lg">
+<div class="chart-header">
+<div class="chart-title-group">
+<h3 class="chart-title">Tendance de Durée des Requêtes</h3>
+<p class="chart-sub">Temps de réponse moyen sur la période</p>
+</div>
+@if (s.requestDurationStats) {
+<div class="perf-pills">
+<span class="perf-pill p50">P50 · {{ s.requestDurationStats.p50DurationMs | number:'1.0-0' }}ms</span>
+<span class="perf-pill p95">P95 · {{ s.requestDurationStats.p95DurationMs | number:'1.0-0' }}ms</span>
+<span class="perf-pill p99">P99 · {{ s.requestDurationStats.p99DurationMs | number:'1.0-0' }}ms</span>
+</div>
+          }
+</div>
+<div class="chart-body" style="height: 200px">
+<canvas id="chart-duration-time"></canvas>
+</div>
+@if (!s.requestDurationStats) {
+<div class="empty-state">Aucune donnée de durée — les logs peuvent ne pas contenir <code>request.durationMs</code></div>
+        }
+</div>
+
+<!-- Duration Buckets -->
+<div class="chart-card chart-third-sm">
+<div class="chart-header">
+<div class="chart-title-group">
+<h3 class="chart-title">Catégories de Durée</h3>
+<p class="chart-sub">Distribution des durées de requête</p>
+</div>
+</div>
+<div class="chart-body" style="height: 160px">
+<canvas id="chart-duration-buckets"></canvas>
+</div>
+@if (s.requestDurationStats) {
+<div class="slow-rate-bar">
+<span class="slow-label">Lentes (&gt;1s)</span>
+<div class="progress-bar">
+<div class="progress-fill"
+[style.width.%]="s.requestDurationStats.slowRequestRate"
+[class.danger]="s.requestDurationStats.slowRequestRate > 20"></div>
+</div>
+<span class="slow-pct">{{ s.requestDurationStats.slowRequestRate | number:'1.1-1' }}%</span>
+</div>
+        }
+</div>
+
+<!-- Hourly Pattern -->
+<div class="chart-card chart-third-sm">
+<div class="chart-header">
+<div class="chart-title-group">
+<h3 class="chart-title">Schéma Horaire</h3>
+<p class="chart-sub">Détection des heures de pointe</p>
+</div>
+</div>
+<div class="chart-body" style="height: 200px">
+<canvas id="chart-heatmap-hours"></canvas>
+</div>
+</div>
+</section>
+
+<!-- Instance Health Table -->
+@if (isGlobal && s.instancesHealth?.length) {
+<section class="health-section">
+<div class="section-card">
+<div class="section-header">
+<div>
+<h3 class="section-title">Santé des Instances</h3>
+<p class="section-sub">Vue d'ensemble de l'état de tous les services surveillés</p>
+</div>
+</div>
+<div class="table-wrapper">
+<table class="health-table">
+<thead>
+<tr>
+<th>Instance</th>
+<th>Statut</th>
+<th>Environnement</th>
+<th>Logs Totaux</th>
+<th>Erreurs</th>
+<th>Taux d'Erreur</th>
+<th>Durée Moyenne</th>
+<th>Exception Principale</th>
+<th>Dernier Log</th>
+</tr>
+</thead>
+<tbody>
+@for (inst of s.instancesHealth; track inst.instanceId) {
+<tr class="health-row" [class.offline]="inst.status === 'Offline'">
+<td>
+<div class="inst-cell">
+<div class="inst-avatar">{{ inst.instanceName.charAt(0).toUpperCase() }}</div>
+<div>
+<div class="inst-name-cell">{{ inst.instanceName }}</div>
+<div class="inst-host">{{ inst.host }}</div>
+</div>
+</div>
+</td>
+<td>
+<span class="status-badge" [class]="getStatusClass(inst.status)">
+<span class="status-dot" [class]="getStatusClass(inst.status)"></span>
+                        {{ inst.status }}
+</span>
+</td>
+<td><span class="env-badge" [class]="getEnvClass(inst.environment)">{{ inst.environment }}</span></td>
+<td class="num-cell">{{ formatBigNumber(inst.totalLogs) }}</td>
+<td class="num-cell text-red">{{ formatBigNumber(inst.errorCount) }}</td>
+<td>
+<div class="rate-cell">
+<div class="mini-bar">
+<div class="mini-fill" [style.width.%]="inst.errorRate" [class.danger]="inst.errorRate > 10"></div>
+</div>
+<span [class.text-red]="inst.errorRate > 10">{{ inst.errorRate | number:'1.1-1' }}%</span>
+</div>
+</td>
+<td class="num-cell">{{ formatMs(inst.avgDurationMs) }}</td>
+<td class="exception-cell">
+@if (inst.topException) {
+<span class="exception-chip">{{ inst.topException.split('.').pop() }}</span>
+                      } @else {
+<span class="text-muted">—</span>
+                      }
+</td>
+<td class="date-cell">{{ formatDate(inst.lastLogAt) }}</td>
+</tr>
+                }
+</tbody>
+</table>
+</div>
+</div>
+</section>
+    }
+  } <!-- end @if (s && !loading()) -->
+
+<!-- Empty State -->
+@if (!loading() && s && s.totalLogs === 0) {
+<div class="no-data-banner">
+<div class="no-data-icon">📭</div>
+<div>
+<h3>Aucun log pour cette période</h3>
+<p>L'API a répondu avec succès mais aucun log n'a été trouvé entre le
+<strong>{{ s.fromDate | date:'mediumDate' }}</strong> et le
+<strong>{{ s.toDate | date:'mediumDate' }}</strong>.
+</p>
+<p class="hint">Essayez d'élargir la plage de dates ou vérifiez que vos instances envoient bien des logs.</p>
+</div>
+</div>
+  }
+</div>

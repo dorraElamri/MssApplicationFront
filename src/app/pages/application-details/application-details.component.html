@@ -1,0 +1,17 @@
+<app-page-breadcrumb [breadcrumbs]="[{label: 'Applications', link: '/applications'}, {label: 'Détails de l\'Application'}]" />
+  <app-component-card title=" ">
+
+         
+          
+          @if (isLoading) {
+  <p>Chargement...</p>
+} @else if (error) {
+  <p class="text-red-600">{{ error }}</p>
+} @else if (instance) {
+  <app-application-card [instance]="instance"></app-application-card>
+} @else {
+  <p>Aucune instance sélectionnée</p>
+}
+
+
+   </app-component-card>

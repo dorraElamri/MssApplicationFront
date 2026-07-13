@@ -1,0 +1,101 @@
+
+
+<div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+  <div>
+    <div class="mb-5 sm:mb-8">
+      <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
+        Sign Up
+      </h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Enter your email and password to sign up!
+      </p>
+    </div>
+
+    
+
+    <!-- Divider -->
+    <div class="relative py-3 sm:py-5">
+      <div class="absolute inset-0 flex items-center">
+        <div class="w-full border-t border-gray-200 dark:border-gray-800"></div>
+      </div>
+      <div class="relative flex justify-center text-sm">
+        <span class="p-2 text-gray-400  dark:bg-gray-900 ">
+          
+        </span>
+      </div>
+    </div>
+
+    <form (ngSubmit)="onSignUp()">
+  <div class="space-y-5">
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <!-- First Name -->
+      <div class="sm:col-span-1">
+        <app-label>
+           Name<span class="text-error-500">*</span>
+        </app-label>
+        <app-input-field 
+          type="text" 
+          [(ngModel)]="name"
+          id="fname" 
+          name="fname" 
+          placeholder="Enter your name" />
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div>
+      <app-label>
+        Email <span class="text-error-500">*</span>
+      </app-label>
+      <app-input-field 
+        type="email" 
+        [(ngModel)]="email"
+        id="email" 
+        name="email" 
+        placeholder="Enter your email" />
+    </div>
+
+    <!-- Password -->
+    <div>
+      <app-label>Password <span class="text-error-500">*</span></app-label>
+      <div class="relative">
+        <app-input-field 
+          [type]="showPassword ? 'text' : 'password'" 
+          placeholder="Enter your password"
+          [(ngModel)]="password"
+          name="password" 
+          class="form-input" 
+          required />
+        <span (click)="togglePasswordVisibility()" class="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2">
+          <!-- ton SVG toggle password ici -->
+        </span>
+      </div>
+    </div>
+
+    <!-- Button -->
+    <div>
+      <button 
+        type="submit"
+        [disabled]="loading"
+        class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600">
+        {{ loading ? 'Création en cours...' : 'Sign Up' }}
+      </button>
+    </div>
+    
+
+   
+   
+
+  </div>
+</form>
+
+    <div class="mt-5">
+      <p class="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
+         already have an account?
+        <a routerLink="/signin" class="text-brand-500 hover:text-brand-600 dark:text-brand-400">
+          Sign In
+        </a>
+      </p>
+    </div>
+  </div>
+</div>
